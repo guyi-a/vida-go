@@ -1,5 +1,5 @@
 # 多阶段构建：第一阶段 - 构建Go应用
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -24,6 +24,7 @@ COPY . .
 # GOOS=linux: 目标操作系统为Linux
 # -ldflags="-s -w": 去除调试信息，减小二进制文件大小
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o vida-api ./cmd/api
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o vida-worker ./cmd/worker
 
 # 多阶段构建：第二阶段 - 运行环境
 FROM alpine:latest
@@ -46,6 +47,7 @@ WORKDIR /app
 
 # 从构建阶段复制编译好的二进制文件
 COPY --from=builder /app/vida-api .
+COPY --from=builder /app/vida-worker .
 
 # 复制配置文件
 COPY --from=builder /app/configs ./configs

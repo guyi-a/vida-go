@@ -49,6 +49,15 @@ func Init(cfg *config.DatabaseConfig) error {
 	return nil
 }
 
+// AutoMigrate 自动迁移数据库表结构
+func AutoMigrate(models ...interface{}) error {
+	if err := DB.AutoMigrate(models...); err != nil {
+		return fmt.Errorf("failed to auto migrate: %w", err)
+	}
+	logger.Info("Database auto migration completed")
+	return nil
+}
+
 // Close 关闭数据库连接
 func Close() error {
 	if DB == nil {
