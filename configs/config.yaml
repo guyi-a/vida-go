@@ -1,0 +1,72 @@
+# Vida-Go 配置文件
+
+# 应用配置
+app:
+  name: "vida-go"
+  version: "0.1.0"
+  mode: "debug"  # debug, release, test
+  port: 8000
+
+# 数据库配置
+database:
+  host: "postgres"
+  port: 5432
+  user: "guyi"
+  password: "guyi123"
+  dbname: "guyi-vida"
+  sslmode: "disable"
+  max_open_conns: 100
+  max_idle_conns: 10
+  conn_max_lifetime: 3600  # 秒
+
+# Redis配置
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+# MinIO配置
+minio:
+  endpoint: "minio:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"
+  use_ssl: false
+  buckets:
+    - "raw-videos"
+    - "public-videos"
+    - "user-avatars"
+    - "user-banners"
+
+# Kafka配置
+kafka:
+  brokers:
+    - "kafka:29092"
+  topics:
+    video_transcode: "video.transcode"
+    video_uploaded: "video.uploaded"
+
+# Elasticsearch配置
+elasticsearch:
+  hosts:
+    - "http://elasticsearch:9200"
+  index:
+    videos: "videos"
+
+# Agent服务配置
+agent:
+  url: "http://agent-service:8001"
+  timeout: 30  # 秒
+
+# JWT配置
+jwt:
+  secret: "your_secret_key_here_change_in_production"
+  expire_hours: 240  # Token过期时间（小时）
+
+# 日志配置
+log:
+  level: "info"  # debug, info, warn, error
+  format: "json"  # json, console
+  output: "stdout"  # stdout, file
+  file_path: "logs/app.log"
