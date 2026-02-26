@@ -16,6 +16,7 @@ func Setup(
 	videoHandler *handler.VideoHandler,
 	commentHandler *handler.CommentHandler,
 	favoriteHandler *handler.FavoriteHandler,
+	searchHandler *handler.SearchHandler,
 	adminMiddleware gin.HandlerFunc,
 ) {
 	v1 := r.Group("/api/v1")
@@ -108,5 +109,12 @@ func Setup(
 		favorites.GET("/my/videos", favoriteHandler.GetMyFavoritedVideos)
 		favorites.GET("/video/:video_id/list", favoriteHandler.ListVideoFavorites)
 		favorites.POST("/batch/status", favoriteHandler.BatchStatus)
+	}
+
+	// --- 搜索模块 ---
+	search := v1.Group("/search")
+	{
+		search.GET("/videos", searchHandler.SearchVideos)
+		search.POST("/sync", searchHandler.SyncVideosToES)
 	}
 }

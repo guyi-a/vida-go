@@ -22,7 +22,17 @@ func NewFavoriteHandler(favoriteService *service.FavoriteService) *FavoriteHandl
 	return &FavoriteHandler{favoriteService: favoriteService}
 }
 
-// Favorite POST /api/v1/favorites/:video_id
+// Favorite 点赞视频
+// @Summary 点赞视频
+// @Description 对指定视频点赞
+// @Tags 点赞
+// @Produce json
+// @Security BearerAuth
+// @Param video_id path int true "视频ID"
+// @Success 200 {object} response.Response "点赞成功"
+// @Failure 400 {object} response.ErrorResponse "已点赞"
+// @Failure 404 {object} response.ErrorResponse "视频不存在"
+// @Router /favorites/{video_id} [post]
 func (h *FavoriteHandler) Favorite(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("video_id"), 10, 64)
 	if err != nil {
@@ -47,7 +57,16 @@ func (h *FavoriteHandler) Favorite(c *gin.Context) {
 	})
 }
 
-// Unfavorite DELETE /api/v1/favorites/:video_id
+// Unfavorite 取消点赞
+// @Summary 取消点赞
+// @Description 取消对指定视频的点赞
+// @Tags 点赞
+// @Produce json
+// @Security BearerAuth
+// @Param video_id path int true "视频ID"
+// @Success 200 {object} response.Response "取消点赞成功"
+// @Failure 400 {object} response.ErrorResponse "未点赞"
+// @Router /favorites/{video_id} [delete]
 func (h *FavoriteHandler) Unfavorite(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("video_id"), 10, 64)
 	if err != nil {
@@ -70,7 +89,15 @@ func (h *FavoriteHandler) Unfavorite(c *gin.Context) {
 	})
 }
 
-// GetStatus GET /api/v1/favorites/:video_id/status
+// GetStatus 获取点赞状态
+// @Summary 获取点赞状态
+// @Description 查询是否点赞了指定视频
+// @Tags 点赞
+// @Produce json
+// @Security BearerAuth
+// @Param video_id path int true "视频ID"
+// @Success 200 {object} response.Response "查询成功"
+// @Router /favorites/{video_id}/status [get]
 func (h *FavoriteHandler) GetStatus(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("video_id"), 10, 64)
 	if err != nil {
@@ -93,7 +120,16 @@ func (h *FavoriteHandler) GetStatus(c *gin.Context) {
 	})
 }
 
-// ListMyFavorites GET /api/v1/favorites/my/list
+// ListMyFavorites 获取我的点赞列表
+// @Summary 获取我的点赞列表
+// @Description 获取当前用户的点赞记录列表
+// @Tags 点赞
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /favorites/my/list [get]
 func (h *FavoriteHandler) ListMyFavorites(c *gin.Context) {
 	userID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)
@@ -108,7 +144,17 @@ func (h *FavoriteHandler) ListMyFavorites(c *gin.Context) {
 	response.OK(c, "获取我的点赞列表成功", data)
 }
 
-// ListVideoFavorites GET /api/v1/favorites/video/:video_id/list
+// ListVideoFavorites 获取视频点赞列表
+// @Summary 获取视频点赞列表
+// @Description 获取指定视频的点赞用户列表
+// @Tags 点赞
+// @Produce json
+// @Security BearerAuth
+// @Param video_id path int true "视频ID"
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /favorites/video/{video_id}/list [get]
 func (h *FavoriteHandler) ListVideoFavorites(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("video_id"), 10, 64)
 	if err != nil {
@@ -127,7 +173,16 @@ func (h *FavoriteHandler) ListVideoFavorites(c *gin.Context) {
 	response.OK(c, "获取视频点赞列表成功", data)
 }
 
-// BatchStatus POST /api/v1/favorites/batch/status
+// BatchStatus 批量查询点赞状态
+// @Summary 批量查询点赞状态
+// @Description 批量查询对多个视频的点赞状态
+// @Tags 点赞
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.BatchFavoriteStatusRequest true "视频ID列表"
+// @Success 200 {object} response.Response "查询成功"
+// @Router /favorites/batch/status [post]
 func (h *FavoriteHandler) BatchStatus(c *gin.Context) {
 	userID, _ := middleware.GetCurrentUserID(c)
 
@@ -149,7 +204,16 @@ func (h *FavoriteHandler) BatchStatus(c *gin.Context) {
 	})
 }
 
-// GetMyFavoritedVideos GET /api/v1/favorites/my/videos
+// GetMyFavoritedVideos 获取我点赞的视频ID列表
+// @Summary 获取我点赞的视频ID列表
+// @Description 获取当前用户点赞过的视频ID列表
+// @Tags 点赞
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /favorites/my/videos [get]
 func (h *FavoriteHandler) GetMyFavoritedVideos(c *gin.Context) {
 	userID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)

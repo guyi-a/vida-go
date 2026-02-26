@@ -22,7 +22,16 @@ func NewRelationHandler(relationService *service.RelationService) *RelationHandl
 	return &RelationHandler{relationService: relationService}
 }
 
-// Follow POST /api/v1/relations/follow/:id
+// Follow 关注用户
+// @Summary 关注用户
+// @Description 关注指定用户
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "被关注用户ID"
+// @Success 200 {object} response.Response "关注成功"
+// @Failure 400 {object} response.ErrorResponse "不能关注自己/已关注"
+// @Router /relations/follow/{id} [post]
 func (h *RelationHandler) Follow(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	targetID, err := parseIDParam(c)
@@ -40,7 +49,16 @@ func (h *RelationHandler) Follow(c *gin.Context) {
 	response.OK(c, "关注成功", result)
 }
 
-// Unfollow POST /api/v1/relations/unfollow/:id
+// Unfollow 取消关注
+// @Summary 取消关注
+// @Description 取消关注指定用户
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "被取消关注用户ID"
+// @Success 200 {object} response.Response "取消关注成功"
+// @Failure 400 {object} response.ErrorResponse "未关注该用户"
+// @Router /relations/unfollow/{id} [post]
 func (h *RelationHandler) Unfollow(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	targetID, err := parseIDParam(c)
@@ -58,7 +76,17 @@ func (h *RelationHandler) Unfollow(c *gin.Context) {
 	response.OK(c, "取消关注成功", result)
 }
 
-// GetFollowing GET /api/v1/relations/following/:id
+// GetFollowing 获取关注列表
+// @Summary 获取用户关注列表
+// @Description 获取指定用户的关注列表
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /relations/following/{id} [get]
 func (h *RelationHandler) GetFollowing(c *gin.Context) {
 	userID, err := parseIDParam(c)
 	if err != nil {
@@ -77,7 +105,17 @@ func (h *RelationHandler) GetFollowing(c *gin.Context) {
 	response.OK(c, "获取关注列表成功", data)
 }
 
-// GetFollowers GET /api/v1/relations/followers/:id
+// GetFollowers 获取粉丝列表
+// @Summary 获取用户粉丝列表
+// @Description 获取指定用户的粉丝列表
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /relations/followers/{id} [get]
 func (h *RelationHandler) GetFollowers(c *gin.Context) {
 	userID, err := parseIDParam(c)
 	if err != nil {
@@ -96,7 +134,16 @@ func (h *RelationHandler) GetFollowers(c *gin.Context) {
 	response.OK(c, "获取粉丝列表成功", data)
 }
 
-// GetMyFollowing GET /api/v1/relations/following/my/list
+// GetMyFollowing 获取我的关注列表
+// @Summary 获取我的关注列表
+// @Description 获取当前用户的关注列表
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /relations/following/my/list [get]
 func (h *RelationHandler) GetMyFollowing(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)
@@ -110,7 +157,16 @@ func (h *RelationHandler) GetMyFollowing(c *gin.Context) {
 	response.OK(c, "获取我的关注列表成功", data)
 }
 
-// GetMyFollowers GET /api/v1/relations/followers/my/list
+// GetMyFollowers 获取我的粉丝列表
+// @Summary 获取我的粉丝列表
+// @Description 获取当前用户的粉丝列表
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /relations/followers/my/list [get]
 func (h *RelationHandler) GetMyFollowers(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)
@@ -124,7 +180,15 @@ func (h *RelationHandler) GetMyFollowers(c *gin.Context) {
 	response.OK(c, "获取我的粉丝列表成功", data)
 }
 
-// GetFollowStatus GET /api/v1/relations/following/:id/status
+// GetFollowStatus 获取关注状态
+// @Summary 获取关注状态
+// @Description 查询是否关注了指定用户
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "用户ID"
+// @Success 200 {object} response.Response "查询成功"
+// @Router /relations/following/{id}/status [get]
 func (h *RelationHandler) GetFollowStatus(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	targetID, err := parseIDParam(c)
@@ -146,7 +210,16 @@ func (h *RelationHandler) GetFollowStatus(c *gin.Context) {
 	})
 }
 
-// GetMutualFollows GET /api/v1/relations/mutual
+// GetMutualFollows 获取互相关注列表
+// @Summary 获取互相关注列表
+// @Description 获取与当前用户互相关注的用户列表
+// @Tags 关注
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /relations/mutual [get]
 func (h *RelationHandler) GetMutualFollows(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)
@@ -161,7 +234,16 @@ func (h *RelationHandler) GetMutualFollows(c *gin.Context) {
 	response.OK(c, "获取互相关注列表成功", data)
 }
 
-// BatchFollowStatus POST /api/v1/relations/batch/status
+// BatchFollowStatus 批量查询关注状态
+// @Summary 批量查询关注状态
+// @Description 批量查询对多个用户的关注状态
+// @Tags 关注
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body dto.BatchFollowStatusRequest true "用户ID列表"
+// @Success 200 {object} response.Response "查询成功"
+// @Router /relations/batch/status [post]
 func (h *RelationHandler) BatchFollowStatus(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 

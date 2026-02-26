@@ -22,7 +22,20 @@ func NewVideoHandler(videoService *service.VideoService) *VideoHandler {
 	return &VideoHandler{videoService: videoService}
 }
 
-// Upload POST /api/v1/videos/upload
+// Upload 上传视频
+// @Summary 上传视频
+// @Description 上传视频文件，支持 mp4, avi, mov, mkv, flv, webm 格式
+// @Tags 视频
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param title formData string true "视频标题"
+// @Param description formData string false "视频描述"
+// @Param video_file formData file true "视频文件"
+// @Success 200 {object} response.Response "上传成功"
+// @Failure 400 {object} response.ErrorResponse "请求参数无效"
+// @Failure 401 {object} response.ErrorResponse "未授权"
+// @Router /videos/upload [post]
 func (h *VideoHandler) Upload(c *gin.Context) {
 	var req dto.VideoUploadRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -89,7 +102,15 @@ func (h *VideoHandler) Upload(c *gin.Context) {
 	})
 }
 
-// GetFeed GET /api/v1/videos/feed（公开，不需要登录）
+// GetFeed 获取视频流
+// @Summary 获取视频流
+// @Description 获取视频列表（公开接口，不需要登录）
+// @Tags 视频
+// @Produce json
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(10)
+// @Success 200 {object} response.Response{data=dto.VideoListData} "获取成功"
+// @Router /videos/feed [get]
 func (h *VideoHandler) GetFeed(c *gin.Context) {
 	page, pageSize := parsePagination(c)
 
@@ -103,7 +124,16 @@ func (h *VideoHandler) GetFeed(c *gin.Context) {
 	response.OK(c, "获取视频流成功", data)
 }
 
-// GetDetail GET /api/v1/videos/:id
+// GetDetail 获取视频详情
+// @Summary 获取视频详情
+// @Description 根据视频ID获取视频详细信息
+// @Tags 视频
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "视频ID"
+// @Success 200 {object} response.Response{data=dto.VideoInfo} "获取成功"
+// @Failure 404 {object} response.ErrorResponse "视频不存在"
+// @Router /videos/{id} [get]
 func (h *VideoHandler) GetDetail(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -120,7 +150,18 @@ func (h *VideoHandler) GetDetail(c *gin.Context) {
 	response.OK(c, "获取视频详情成功", info)
 }
 
-// GetMyVideos GET /api/v1/videos/my/list
+// GetMyVideos 获取我的视频列表
+// @Summary 获取我的视频列表
+// @Description 获取当前用户上传的视频列表
+// @Tags 视频
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(10)
+// @Param status query string false "视频状态筛选"
+// @Success 200 {object} response.Response{data=dto.VideoListData} "获取成功"
+// @Failure 401 {object} response.ErrorResponse "未授权"
+// @Router /videos/my/list [get]
 func (h *VideoHandler) GetMyVideos(c *gin.Context) {
 	currentUserID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)
@@ -140,7 +181,20 @@ func (h *VideoHandler) GetMyVideos(c *gin.Context) {
 	response.OK(c, "获取我的视频列表成功", data)
 }
 
-// UpdateVideo PUT /api/v1/videos/:id
+// UpdateVideo 更新视频信息
+// @Summary 更新视频信息
+// @Description 更新视频的标题、描述等信息
+// @Tags 视频
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "视频ID"
+// @Param request body dto.VideoUpdateRequest true "更新信息"
+// @Success 200 {object} response.Response{data=dto.VideoInfo} "更新成功"
+// @Failure 400 {object} response.ErrorResponse "请求参数无效"
+// @Failure 403 {object} response.ErrorResponse "无权限"
+// @Failure 404 {object} response.ErrorResponse "视频不存在"
+// @Router /videos/{id} [put]
 func (h *VideoHandler) UpdateVideo(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -165,7 +219,17 @@ func (h *VideoHandler) UpdateVideo(c *gin.Context) {
 	response.OK(c, "更新视频成功", info)
 }
 
-// DeleteVideo DELETE /api/v1/videos/:id
+// DeleteVideo 删除视频
+// @Summary 删除视频
+// @Description 删除指定的视频
+// @Tags 视频
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "视频ID"
+// @Success 200 {object} response.Response "删除成功"
+// @Failure 403 {object} response.ErrorResponse "无权限"
+// @Failure 404 {object} response.ErrorResponse "视频不存在"
+// @Router /videos/{id} [delete]
 func (h *VideoHandler) DeleteVideo(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

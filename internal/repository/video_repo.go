@@ -34,6 +34,32 @@ func (r *VideoRepository) GetByIDWithAuthor(id int64) (*model.Video, error) {
 	return &video, nil
 }
 
+// GetByIDsWithAuthor 根据 ID 列表批量获取视频（含作者，保持 ID 顺序）
+func (r *VideoRepository) GetByIDsWithAuthor(ids []int64) ([]model.Video, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	var videos []model.Video
+	err := r.db.Preload("Author").Where("id IN ? AND status != 'deleted'", ids).Find(&videos).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 按 ids 顺序排列
+	videoMap := make(map[int64]*model.Video)
+	for i := range videos {
+		videoMap[videos[i].ID] = &videos[i]
+	}
+	ordered := make([]model.Video, 0, len(ids))
+	for _, id := range ids {
+		if v, ok := videoMap[id]; ok {
+			ordered = append(ordered, *v)
+		}
+	}
+	return ordered, nil
+}
+
 // GetByIDAndAuthor 根据视频 ID + 作者 ID 查询（权限校验用）
 func (r *VideoRepository) GetByIDAndAuthor(videoID, authorID int64) (*model.Video, error) {
 	var video model.Video

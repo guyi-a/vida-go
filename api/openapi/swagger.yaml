@@ -1,0 +1,1511 @@
+basePath: /api/v1
+definitions:
+  dto.AuthorBrief:
+    properties:
+      avatar:
+        type: string
+      id:
+        type: integer
+      username:
+        type: string
+    type: object
+  dto.BatchFavoriteStatusRequest:
+    properties:
+      video_ids:
+        items:
+          type: integer
+        maxItems: 100
+        minItems: 1
+        type: array
+    required:
+    - video_ids
+    type: object
+  dto.BatchFollowStatusRequest:
+    properties:
+      user_ids:
+        items:
+          type: integer
+        maxItems: 100
+        minItems: 1
+        type: array
+    required:
+    - user_ids
+    type: object
+  dto.CommentCreateRequest:
+    properties:
+      content:
+        maxLength: 1000
+        minLength: 1
+        type: string
+      parent_id:
+        type: integer
+    required:
+    - content
+    type: object
+  dto.CommentUpdateRequest:
+    properties:
+      content:
+        maxLength: 1000
+        minLength: 1
+        type: string
+    required:
+    - content
+    type: object
+  dto.LoginRequest:
+    properties:
+      password:
+        maxLength: 255
+        minLength: 6
+        type: string
+      username:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.RegisterRequest:
+    properties:
+      avatar:
+        maxLength: 500
+        type: string
+      background_image:
+        maxLength: 500
+        type: string
+      password:
+        maxLength: 255
+        minLength: 6
+        type: string
+      user_role:
+        enum:
+        - user
+        - admin
+        type: string
+      username:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  dto.SearchVideoData:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      videos:
+        items:
+          $ref: '#/definitions/dto.SearchVideoInfo'
+        type: array
+    type: object
+  dto.SearchVideoInfo:
+    properties:
+      author_id:
+        type: integer
+      author_name:
+        type: string
+      comment_count:
+        type: integer
+      cover_url:
+        type: string
+      description:
+        type: string
+      favorite_count:
+        type: integer
+      highlight:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+      id:
+        type: integer
+      play_url:
+        type: string
+      publish_time:
+        type: integer
+      title:
+        type: string
+      view_count:
+        type: integer
+    type: object
+  dto.TokenData:
+    properties:
+      expires_in:
+        type: integer
+      token:
+        type: string
+      token_type:
+        type: string
+      user:
+        $ref: '#/definitions/dto.UserInfo'
+    type: object
+  dto.UserInfo:
+    properties:
+      avatar:
+        type: string
+      background_image:
+        type: string
+      follow_count:
+        type: integer
+      follower_count:
+        type: integer
+      id:
+        type: integer
+      user_name:
+        type: string
+      user_role:
+        type: string
+    type: object
+  dto.UserUpdateRequest:
+    properties:
+      avatar:
+        maxLength: 500
+        type: string
+      background_image:
+        maxLength: 500
+        type: string
+      username:
+        maxLength: 255
+        minLength: 1
+        type: string
+    type: object
+  dto.VideoInfo:
+    properties:
+      author:
+        $ref: '#/definitions/dto.AuthorBrief'
+      author_id:
+        type: integer
+      comment_count:
+        type: integer
+      cover_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      duration:
+        type: integer
+      favorite_count:
+        type: integer
+      file_format:
+        type: string
+      file_size:
+        type: integer
+      height:
+        type: integer
+      id:
+        type: integer
+      play_url:
+        type: string
+      publish_time:
+        type: integer
+      status:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      view_count:
+        type: integer
+      width:
+        type: integer
+    type: object
+  dto.VideoListData:
+    properties:
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+      videos:
+        items:
+          $ref: '#/definitions/dto.VideoInfo'
+        type: array
+    type: object
+  dto.VideoUpdateRequest:
+    properties:
+      description:
+        type: string
+      status:
+        enum:
+        - pending
+        - processing
+        - published
+        - failed
+        - deleted
+        type: string
+      title:
+        maxLength: 200
+        minLength: 1
+        type: string
+    type: object
+  response.ErrorInfo:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+      type:
+        type: string
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+    type: object
+  response.Response:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: 127.0.0.1:8000
+info:
+  contact:
+    email: support@vida.com
+    name: API Support
+  description: 视频分享平台 API 服务
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Vida-Go API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 用户登录获取 JWT Token
+      parameters:
+      - description: 登录信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登录成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.TokenData'
+              type: object
+        "400":
+          description: 请求参数无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 用户名或密码错误
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 用户登录
+      tags:
+      - 认证
+  /auth/logout:
+    post:
+      description: 用户登出（当前仅返回成功）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 登出成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 用户登出
+      tags:
+      - 认证
+  /auth/me:
+    get:
+      description: 获取当前登录用户的详细信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserInfo'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 认证
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: 注册新用户账号
+      parameters:
+      - description: 注册信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 注册成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserInfo'
+              type: object
+        "400":
+          description: 请求参数无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 用户注册
+      tags:
+      - 认证
+  /comments/{id}:
+    delete:
+      description: 删除指定评论
+      parameters:
+      - description: 评论ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评论不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除评论
+      tags:
+      - 评论
+    put:
+      consumes:
+      - application/json
+      description: 更新指定评论的内容
+      parameters:
+      - description: 评论ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CommentUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 评论不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新评论
+      tags:
+      - 评论
+  /comments/{id}/replies:
+    get:
+      description: 获取指定评论的回复列表
+      parameters:
+      - description: 评论ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取评论回复列表
+      tags:
+      - 评论
+  /comments/{video_id}:
+    post:
+      consumes:
+      - application/json
+      description: 对指定视频发表评论
+      parameters:
+      - description: 视频ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      - description: 评论内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CommentCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 发表成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 视频不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 发表评论
+      tags:
+      - 评论
+  /comments/my/list:
+    get:
+      description: 获取当前用户发表的评论列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取我的评论列表
+      tags:
+      - 评论
+  /comments/video/{video_id}:
+    get:
+      description: 获取指定视频的评论列表
+      parameters:
+      - description: 视频ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      - description: 父评论ID
+        in: query
+        name: parent_id
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取视频评论列表
+      tags:
+      - 评论
+  /favorites/{video_id}:
+    delete:
+      description: 取消对指定视频的点赞
+      parameters:
+      - description: 视频ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消点赞成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 未点赞
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消点赞
+      tags:
+      - 点赞
+    post:
+      description: 对指定视频点赞
+      parameters:
+      - description: 视频ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 点赞成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 已点赞
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 视频不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 点赞视频
+      tags:
+      - 点赞
+  /favorites/{video_id}/status:
+    get:
+      description: 查询是否点赞了指定视频
+      parameters:
+      - description: 视频ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取点赞状态
+      tags:
+      - 点赞
+  /favorites/batch/status:
+    post:
+      consumes:
+      - application/json
+      description: 批量查询对多个视频的点赞状态
+      parameters:
+      - description: 视频ID列表
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BatchFavoriteStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 批量查询点赞状态
+      tags:
+      - 点赞
+  /favorites/my/list:
+    get:
+      description: 获取当前用户的点赞记录列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取我的点赞列表
+      tags:
+      - 点赞
+  /favorites/my/videos:
+    get:
+      description: 获取当前用户点赞过的视频ID列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取我点赞的视频ID列表
+      tags:
+      - 点赞
+  /favorites/video/{video_id}/list:
+    get:
+      description: 获取指定视频的点赞用户列表
+      parameters:
+      - description: 视频ID
+        in: path
+        name: video_id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取视频点赞列表
+      tags:
+      - 点赞
+  /relations/batch/status:
+    post:
+      consumes:
+      - application/json
+      description: 批量查询对多个用户的关注状态
+      parameters:
+      - description: 用户ID列表
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BatchFollowStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 批量查询关注状态
+      tags:
+      - 关注
+  /relations/follow/{id}:
+    post:
+      description: 关注指定用户
+      parameters:
+      - description: 被关注用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 关注成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 不能关注自己/已关注
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 关注用户
+      tags:
+      - 关注
+  /relations/followers/{id}:
+    get:
+      description: 获取指定用户的粉丝列表
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户粉丝列表
+      tags:
+      - 关注
+  /relations/followers/my/list:
+    get:
+      description: 获取当前用户的粉丝列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取我的粉丝列表
+      tags:
+      - 关注
+  /relations/following/{id}:
+    get:
+      description: 获取指定用户的关注列表
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户关注列表
+      tags:
+      - 关注
+  /relations/following/{id}/status:
+    get:
+      description: 查询是否关注了指定用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 查询成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取关注状态
+      tags:
+      - 关注
+  /relations/following/my/list:
+    get:
+      description: 获取当前用户的关注列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取我的关注列表
+      tags:
+      - 关注
+  /relations/mutual:
+    get:
+      description: 获取与当前用户互相关注的用户列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取互相关注列表
+      tags:
+      - 关注
+  /relations/unfollow/{id}:
+    post:
+      description: 取消关注指定用户
+      parameters:
+      - description: 被取消关注用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取消关注成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 未关注该用户
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 取消关注
+      tags:
+      - 关注
+  /search/sync:
+    post:
+      description: 将数据库中的视频同步到 Elasticsearch
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 同步成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "500":
+          description: 同步失败
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 同步视频到ES
+      tags:
+      - 搜索
+  /search/videos:
+    get:
+      description: 根据关键词搜索视频，支持多种筛选条件
+      parameters:
+      - description: 搜索关键词
+        in: query
+        name: q
+        type: string
+      - description: 作者ID
+        in: query
+        name: author_id
+        type: integer
+      - description: 视频ID
+        in: query
+        name: video_id
+        type: integer
+      - description: 视频状态
+        in: query
+        name: status
+        type: string
+      - default: relevance
+        description: '排序方式: relevance, latest, hot'
+        in: query
+        name: sort
+        type: string
+      - description: 开始时间戳
+        in: query
+        name: start_time
+        type: integer
+      - description: 结束时间戳
+        in: query
+        name: end_time
+        type: integer
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 搜索成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.SearchVideoData'
+              type: object
+        "400":
+          description: 请求参数无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: 搜索视频
+      tags:
+      - 搜索
+  /users:
+    get:
+      description: 分页获取用户列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 用户名筛选
+        in: query
+        name: username
+        type: string
+      - description: 角色筛选
+        in: query
+        name: user_role
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            $ref: '#/definitions/response.Response'
+      security:
+      - BearerAuth: []
+      summary: 获取用户列表（管理员）
+      tags:
+      - 用户
+  /users/{id}:
+    delete:
+      description: 软删除指定用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除用户（管理员）
+      tags:
+      - 用户
+    get:
+      description: 根据用户ID获取用户信息（需要权限）
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserInfo'
+              type: object
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取指定用户信息
+      tags:
+      - 用户
+    put:
+      consumes:
+      - application/json
+      description: 更新指定用户的信息
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserInfo'
+              type: object
+        "400":
+          description: 请求参数无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新用户信息
+      tags:
+      - 用户
+  /users/{id}/restore:
+    post:
+      description: 恢复已删除的用户
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 恢复成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 恢复用户（管理员）
+      tags:
+      - 用户
+  /users/{id}/set-admin:
+    post:
+      description: 将指定用户设置为管理员
+      parameters:
+      - description: 用户ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 设置成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserInfo'
+              type: object
+        "404":
+          description: 用户不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 设置管理员（管理员）
+      tags:
+      - 用户
+  /users/me:
+    get:
+      description: 获取当前登录用户的信息
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.UserInfo'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取当前用户信息
+      tags:
+      - 用户
+  /videos/{id}:
+    delete:
+      description: 删除指定的视频
+      parameters:
+      - description: 视频ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 删除成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 视频不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 删除视频
+      tags:
+      - 视频
+    get:
+      description: 根据视频ID获取视频详细信息
+      parameters:
+      - description: 视频ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VideoInfo'
+              type: object
+        "404":
+          description: 视频不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取视频详情
+      tags:
+      - 视频
+    put:
+      consumes:
+      - application/json
+      description: 更新视频的标题、描述等信息
+      parameters:
+      - description: 视频ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: 更新信息
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.VideoUpdateRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VideoInfo'
+              type: object
+        "400":
+          description: 请求参数无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "403":
+          description: 无权限
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: 视频不存在
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 更新视频信息
+      tags:
+      - 视频
+  /videos/feed:
+    get:
+      description: 获取视频列表（公开接口，不需要登录）
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VideoListData'
+              type: object
+      summary: 获取视频流
+      tags:
+      - 视频
+  /videos/my/list:
+    get:
+      description: 获取当前用户上传的视频列表
+      parameters:
+      - default: 1
+        description: 页码
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: 每页数量
+        in: query
+        name: page_size
+        type: integer
+      - description: 视频状态筛选
+        in: query
+        name: status
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 获取成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/response.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/dto.VideoListData'
+              type: object
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取我的视频列表
+      tags:
+      - 视频
+  /videos/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 上传视频文件，支持 mp4, avi, mov, mkv, flv, webm 格式
+      parameters:
+      - description: 视频标题
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: 视频描述
+        in: formData
+        name: description
+        type: string
+      - description: 视频文件
+        in: formData
+        name: video_file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 上传成功
+          schema:
+            $ref: '#/definitions/response.Response'
+        "400":
+          description: 请求参数无效
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: 未授权
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 上传视频
+      tags:
+      - 视频
+securityDefinitions:
+  BearerAuth:
+    description: '输入格式: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

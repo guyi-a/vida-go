@@ -44,16 +44,24 @@ async def root():
 @app.get("/health")
 async def health_check():
     """健康检查接口"""
+    from app.agent.service import get_agent_service
+    from app.agent.context import get_memory_store
+    
+    agent_service = get_agent_service()
+    memory_store = get_memory_store()
+    
     return {
         "status": "ok",
         "service": "agent-service",
         "version": "0.1.0",
+        "agent_available": agent_service.is_available(),
+        "memory_available": memory_store.is_available(),
     }
 
 
-# TODO: 后续添加Agent相关路由
-# from app.api import agent
-# app.include_router(agent.router, prefix="/api/v1", tags=["agent"])
+# 注册Agent路由
+from app.api.agent import router as agent_router
+app.include_router(agent_router)
 
 
 if __name__ == "__main__":

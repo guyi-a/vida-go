@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vida</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <!-- ========== 首页 - 全屏视频流 ========== -->
+        <div class="page page-home active" id="pageHome">
+            <div class="video-container" id="videoContainer">
+                <!-- 视频项通过 JS 动态渲染 -->
+            </div>
+            <div class="video-loading" id="videoLoading">
+                <div class="spinner"></div>
+                <p>加载中...</p>
+            </div>
+        </div>
+
+        <!-- ========== 搜索页 ========== -->
+        <div class="page page-search" id="pageSearch">
+            <div class="search-header">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="搜索视频...">
+                    <button class="search-btn" id="searchBtn">搜索</button>
+                </div>
+                <div class="search-sort" id="searchSort">
+                    <button class="sort-btn active" data-sort="relevance">相关</button>
+                    <button class="sort-btn" data-sort="time">最新</button>
+                    <button class="sort-btn" data-sort="hot">最热</button>
+                </div>
+            </div>
+            <div class="search-results" id="searchResults">
+                <div class="search-placeholder">
+                    <i class="fas fa-search"></i>
+                    <p>搜索你感兴趣的视频</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 上传页 ========== -->
+        <div class="page page-upload" id="pageUpload">
+            <div class="upload-container">
+                <h2>发布视频</h2>
+                <form id="uploadForm">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>点击或拖拽上传视频</p>
+                        <small>支持 MP4, AVI, MOV, MKV, WebM</small>
+                        <input type="file" id="videoFile" accept="video/*" hidden>
+                    </div>
+                    <div class="upload-preview" id="uploadPreview" style="display:none">
+                        <video id="previewVideo" muted></video>
+                        <button type="button" class="btn-remove-video" id="removeVideo">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="videoTitle" placeholder="添加标题..." maxlength="200" required>
+                        <span class="char-count"><span id="titleCount">0</span>/200</span>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="videoDesc" placeholder="添加描述..." rows="3" maxlength="500"></textarea>
+                    </div>
+                    <div class="upload-progress" id="uploadProgress" style="display:none">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress-text" id="progressText">上传中 0%</span>
+                    </div>
+                    <button type="submit" class="btn-publish" id="publishBtn">发布</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========== AI 助手页 ========== -->
+        <div class="page page-agent" id="pageAgent">
+            <div class="agent-header">
+                <h2><i class="fas fa-robot"></i> AI 助手</h2>
+                <button class="btn-icon" id="newChatBtn" title="新对话">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="chat-welcome">
+                    <div class="welcome-icon"><i class="fas fa-robot"></i></div>
+                    <h3>你好，我是 AI 助手</h3>
+                    <p>我可以帮你搜索和推荐视频，试试问我：</p>
+                    <div class="welcome-suggestions">
+                        <button class="suggestion-btn">帮我找搞笑视频</button>
+                        <button class="suggestion-btn">推荐热门视频</button>
+                        <button class="suggestion-btn">搜索教程类视频</button>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-bar">
+                <input type="text" id="chatInput" placeholder="问我任何关于视频的问题...">
+                <button class="btn-send" id="sendBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========== 个人中心页 ========== -->
+        <div class="page page-profile" id="pageProfile">
+            <!-- 未登录状态 -->
+            <div class="profile-guest" id="profileGuest">
+                <div class="guest-icon"><i class="fas fa-user-circle"></i></div>
+                <h3>登录后查看个人中心</h3>
+                <button class="btn-login-prompt" id="profileLoginBtn">登录 / 注册</button>
+            </div>
+            <!-- 已登录状态 -->
+            <div class="profile-user" id="profileUser" style="display:none">
+                <div class="profile-header-section">
+                    <div class="profile-avatar">
+                        <img id="profileAvatar" src="" alt="">
+                        <span class="avatar-placeholder" id="avatarPlaceholder"><i class="fas fa-user"></i></span>
+                    </div>
+                    <h2 class="profile-name" id="profileName"></h2>
+                    <div class="profile-stats">
+                        <div class="stat-item" id="statFollowing">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">关注</span>
+                        </div>
+                        <div class="stat-item" id="statFollowers">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">粉丝</span>
+                        </div>
+                        <div class="stat-item" id="statLikes">
+                            <span class="stat-num">0</span>
+                            <span class="stat-label">获赞</span>
+                        </div>
+                    </div>
+                    <button class="btn-logout" id="logoutBtn">退出登录</button>
+                </div>
+                <div class="profile-tabs">
+                    <button class="tab-btn active" data-tab="my-videos">
+                        <i class="fas fa-th"></i> 作品
+                    </button>
+                    <button class="tab-btn" data-tab="my-likes">
+                        <i class="fas fa-heart"></i> 喜欢
+                    </button>
+                </div>
+                <div class="profile-grid" id="profileGrid">
+                    <!-- 视频网格 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ========== 用户主页（查看他人） ========== -->
+        <div class="page page-user-profile" id="pageUserProfile" style="display:none">
+            <div class="user-profile-back">
+                <button class="btn-icon" id="userProfileBack"><i class="fas fa-arrow-left"></i></button>
+            </div>
+            <div class="profile-user">
+                <div class="profile-header-section">
+                    <div class="profile-avatar">
+                        <img id="userProfileAvatar" src="" alt="">
+                        <span class="avatar-placeholder" id="userAvatarPlaceholder"><i class="fas fa-user"></i></span>
+                    </div>
+                    <h2 class="profile-name" id="userProfileName"></h2>
+                    <div class="profile-stats">
+                        <div class="stat-item">
+                            <span class="stat-num" id="userFollowing">0</span>
+                            <span class="stat-label">关注</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-num" id="userFollowers">0</span>
+                            <span class="stat-label">粉丝</span>
+                        </div>
+                    </div>
+                    <button class="btn-follow" id="followBtn">关注</button>
+                </div>
+                <div class="profile-grid" id="userProfileGrid"></div>
+            </div>
+        </div>
+
+        <!-- ========== 底部导航栏 ========== -->
+        <nav class="bottom-nav" id="bottomNav">
+            <button class="nav-item active" data-page="home">
+                <i class="fas fa-home"></i>
+                <span>首页</span>
+            </button>
+            <button class="nav-item" data-page="search">
+                <i class="fas fa-search"></i>
+                <span>搜索</span>
+            </button>
+            <button class="nav-item nav-upload" data-page="upload">
+                <div class="upload-icon">
+                    <i class="fas fa-plus"></i>
+                </div>
+            </button>
+            <button class="nav-item" data-page="agent">
+                <i class="fas fa-robot"></i>
+                <span>AI助手</span>
+            </button>
+            <button class="nav-item" data-page="profile">
+                <i class="fas fa-user"></i>
+                <span>我</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- ========== 登录模态框 ========== -->
+    <div class="modal" id="loginModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2>登录</h2>
+            <form id="loginForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="loginUsername" placeholder="用户名" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="loginPassword" placeholder="密码" required>
+                </div>
+                <button type="submit" class="btn-submit">登录</button>
+            </form>
+            <p class="modal-switch">还没有账号？<a href="#" id="toRegister">立即注册</a></p>
+            <button class="modal-close" id="loginClose"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- ========== 注册模态框 ========== -->
+    <div class="modal" id="registerModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <h2>注册</h2>
+            <form id="registerForm">
+                <div class="input-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="regUsername" placeholder="用户名" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regPassword" placeholder="密码（至少6位）" required minlength="6">
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="regConfirm" placeholder="确认密码" required minlength="6">
+                </div>
+                <button type="submit" class="btn-submit">注册</button>
+            </form>
+            <p class="modal-switch">已有账号？<a href="#" id="toLogin">立即登录</a></p>
+            <button class="modal-close" id="registerClose"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- ========== 评论抽屉 ========== -->
+    <div class="drawer" id="commentDrawer">
+        <div class="drawer-overlay"></div>
+        <div class="drawer-content">
+            <div class="drawer-handle"></div>
+            <div class="drawer-header">
+                <span id="commentCount">0 条评论</span>
+                <button class="btn-icon" id="closeComments"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="comment-list" id="commentList">
+                <!-- 评论列表 -->
+            </div>
+            <div class="comment-input-bar">
+                <input type="text" id="commentInput" placeholder="写评论...">
+                <button class="btn-send" id="sendComment"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== Toast 消息 ========== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

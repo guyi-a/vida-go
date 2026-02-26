@@ -11,6 +11,7 @@ import (
 	"vida-go/internal/api/router"
 	"vida-go/internal/config"
 	"vida-go/internal/infra/database"
+	infraES "vida-go/internal/infra/elasticsearch"
 	infraKafka "vida-go/internal/infra/kafka"
 	infraMinio "vida-go/internal/infra/minio"
 	infraRedis "vida-go/internal/infra/redis"
@@ -19,9 +20,32 @@ import (
 	"vida-go/internal/service"
 	"vida-go/pkg/logger"
 
+	_ "vida-go/api/openapi"
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"go.uber.org/zap"
 )
+
+// @title Vida-Go API
+// @version 1.0
+// @description 视频分享平台 API 服务
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@vida.com
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host 127.0.0.1:8000
+// @BasePath /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description 输入格式: Bearer {token}
 
 func main() {
 	// 加载配置文件
@@ -75,6 +99,16 @@ func main() {
 	}
 	defer infraKafka.CloseProducer()
 
+	// 初始化 Elasticsearch（可选，失败则搜索降级到 DB）
+	if err := infraES.Init(&cfg.Elasticsearch); err != nil {
+		logger.Warn("Elasticsearch init failed, search will fallback to DB", zap.Error(err))
+	} else {
+		defer infraES.Close()
+		if err := infraES.InitIndexes(); err != nil {
+			logger.Warn("Elasticsearch index init failed", zap.Error(err))
+		}
+	}
+
 	// 设置Gin模式
 	gin.SetMode(cfg.App.Mode)
 
@@ -100,18 +134,28 @@ func main() {
 	videoService := service.NewVideoService(videoRepo)
 	commentService := service.NewCommentService(commentRepo, videoRepo)
 	favoriteService := service.NewFavoriteService(favoriteRepo, videoRepo)
+	searchService := service.NewSearchService(videoRepo)
 
 	// 启动转码结果消费者（后台 goroutine）
 	consumerCtx, consumerCancel := context.WithCancel(context.Background())
 	defer consumerCancel()
 
 	if topic, ok := cfg.Kafka.Topics["video_uploaded"]; ok {
+		resultHandler := func(result *infraKafka.TranscodeResult) error {
+			if err := videoService.HandleTranscodeResult(result); err != nil {
+				return err
+			}
+			if result.Status == "published" {
+				_ = searchService.SyncVideoToES(result.VideoID)
+			}
+			return nil
+		}
 		go infraKafka.StartTranscodeResultConsumer(
 			consumerCtx,
 			cfg.Kafka.Brokers,
 			topic,
 			"vida-go-transcode-result",
-			videoService.HandleTranscodeResult,
+			resultHandler,
 		)
 	}
 
@@ -121,6 +165,7 @@ func main() {
 	videoHandler := handler.NewVideoHandler(videoService)
 	commentHandler := handler.NewCommentHandler(commentService)
 	favoriteHandler := handler.NewFavoriteHandler(favoriteService)
+	searchHandler := handler.NewSearchHandler(searchService)
 
 	// 管理员中间件（需要查数据库获取角色）
 	adminMiddleware := middleware.AdminRequired(func(userID int64) (string, error) {
@@ -135,8 +180,11 @@ func main() {
 	r.GET("/healthz", healthCheckHandler)
 	r.GET("/", rootHandler)
 
+	// Swagger 文档路由
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	// 注册业务路由
-	router.Setup(r, authHandler, userHandler, relationHandler, videoHandler, commentHandler, favoriteHandler, adminMiddleware)
+	router.Setup(r, authHandler, userHandler, relationHandler, videoHandler, commentHandler, favoriteHandler, searchHandler, adminMiddleware)
 
 	// 启动服务器
 	addr := fmt.Sprintf(":%d", cfg.App.Port)

@@ -21,7 +21,16 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
-// Register POST /api/v1/auth/register
+// Register 用户注册
+// @Summary 用户注册
+// @Description 注册新用户账号
+// @Tags 认证
+// @Accept json
+// @Produce json
+// @Param request body dto.RegisterRequest true "注册信息"
+// @Success 201 {object} response.Response{data=dto.UserInfo} "注册成功"
+// @Failure 400 {object} response.ErrorResponse "请求参数无效"
+// @Router /auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -43,7 +52,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	response.Created(c, "注册成功", userInfo)
 }
 
-// Login POST /api/v1/auth/login
+// Login 用户登录
+// @Summary 用户登录
+// @Description 用户登录获取 JWT Token
+// @Tags 认证
+// @Accept json
+// @Produce json
+// @Param request body dto.LoginRequest true "登录信息"
+// @Success 200 {object} response.Response{data=dto.TokenData} "登录成功"
+// @Failure 400 {object} response.ErrorResponse "请求参数无效"
+// @Failure 401 {object} response.ErrorResponse "用户名或密码错误"
+// @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -69,13 +88,29 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	response.OK(c, "登录成功", tokenData)
 }
 
-// Logout POST /api/v1/auth/logout（需要认证）
+// Logout 用户登出
+// @Summary 用户登出
+// @Description 用户登出（当前仅返回成功）
+// @Tags 认证
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response "登出成功"
+// @Failure 401 {object} response.ErrorResponse "未授权"
+// @Router /auth/logout [post]
 func (h *AuthHandler) Logout(c *gin.Context) {
 	// 目前不做 token 黑名单，仅返回成功
 	response.OK(c, "登出成功", nil)
 }
 
-// Me GET /api/v1/auth/me（需要认证）
+// Me 获取当前用户信息
+// @Summary 获取当前用户信息
+// @Description 获取当前登录用户的详细信息
+// @Tags 认证
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} response.Response{data=dto.UserInfo} "获取成功"
+// @Failure 401 {object} response.ErrorResponse "未授权"
+// @Router /auth/me [get]
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID, ok := middleware.GetCurrentUserID(c)
 	if !ok {

@@ -22,7 +22,18 @@ func NewCommentHandler(commentService *service.CommentService) *CommentHandler {
 	return &CommentHandler{commentService: commentService}
 }
 
-// Create POST /api/v1/comments/:video_id
+// Create 发表评论
+// @Summary 发表评论
+// @Description 对指定视频发表评论
+// @Tags 评论
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param video_id path int true "视频ID"
+// @Param request body dto.CommentCreateRequest true "评论内容"
+// @Success 200 {object} response.Response "发表成功"
+// @Failure 404 {object} response.ErrorResponse "视频不存在"
+// @Router /comments/{video_id} [post]
 func (h *CommentHandler) Create(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("video_id"), 10, 64)
 	if err != nil {
@@ -47,7 +58,19 @@ func (h *CommentHandler) Create(c *gin.Context) {
 	response.OK(c, "发表评论成功", info)
 }
 
-// Update PUT /api/v1/comments/:id
+// Update 更新评论
+// @Summary 更新评论
+// @Description 更新指定评论的内容
+// @Tags 评论
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "评论ID"
+// @Param request body dto.CommentUpdateRequest true "更新内容"
+// @Success 200 {object} response.Response "更新成功"
+// @Failure 403 {object} response.ErrorResponse "无权限"
+// @Failure 404 {object} response.ErrorResponse "评论不存在"
+// @Router /comments/{id} [put]
 func (h *CommentHandler) Update(c *gin.Context) {
 	commentID, err := parseIDParam(c)
 	if err != nil {
@@ -72,7 +95,17 @@ func (h *CommentHandler) Update(c *gin.Context) {
 	response.OK(c, "更新评论成功", info)
 }
 
-// Delete DELETE /api/v1/comments/:id
+// Delete 删除评论
+// @Summary 删除评论
+// @Description 删除指定评论
+// @Tags 评论
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "评论ID"
+// @Success 200 {object} response.Response "删除成功"
+// @Failure 403 {object} response.ErrorResponse "无权限"
+// @Failure 404 {object} response.ErrorResponse "评论不存在"
+// @Router /comments/{id} [delete]
 func (h *CommentHandler) Delete(c *gin.Context) {
 	commentID, err := parseIDParam(c)
 	if err != nil {
@@ -91,7 +124,18 @@ func (h *CommentHandler) Delete(c *gin.Context) {
 	response.OK(c, "删除评论成功", nil)
 }
 
-// ListByVideo GET /api/v1/comments/video/:video_id
+// ListByVideo 获取视频评论列表
+// @Summary 获取视频评论列表
+// @Description 获取指定视频的评论列表
+// @Tags 评论
+// @Produce json
+// @Security BearerAuth
+// @Param video_id path int true "视频ID"
+// @Param parent_id query int false "父评论ID"
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /comments/video/{video_id} [get]
 func (h *CommentHandler) ListByVideo(c *gin.Context) {
 	videoID, err := strconv.ParseInt(c.Param("video_id"), 10, 64)
 	if err != nil {
@@ -118,7 +162,17 @@ func (h *CommentHandler) ListByVideo(c *gin.Context) {
 	response.OK(c, "获取评论列表成功", data)
 }
 
-// ListReplies GET /api/v1/comments/:id/replies
+// ListReplies 获取评论回复列表
+// @Summary 获取评论回复列表
+// @Description 获取指定评论的回复列表
+// @Tags 评论
+// @Produce json
+// @Security BearerAuth
+// @Param id path int true "评论ID"
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /comments/{id}/replies [get]
 func (h *CommentHandler) ListReplies(c *gin.Context) {
 	commentID, err := parseIDParam(c)
 	if err != nil {
@@ -137,7 +191,16 @@ func (h *CommentHandler) ListReplies(c *gin.Context) {
 	response.OK(c, "获取回复列表成功", data)
 }
 
-// ListMyComments GET /api/v1/comments/my/list
+// ListMyComments 获取我的评论列表
+// @Summary 获取我的评论列表
+// @Description 获取当前用户发表的评论列表
+// @Tags 评论
+// @Produce json
+// @Security BearerAuth
+// @Param page query int false "页码" default(1)
+// @Param page_size query int false "每页数量" default(20)
+// @Success 200 {object} response.Response "获取成功"
+// @Router /comments/my/list [get]
 func (h *CommentHandler) ListMyComments(c *gin.Context) {
 	userID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)

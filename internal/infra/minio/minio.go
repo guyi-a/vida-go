@@ -92,5 +92,10 @@ func GetPublicURL(endpoint string, useSSL bool, bucket, objectName string) strin
 	if useSSL {
 		scheme = "https"
 	}
+	// 处理 endpoint，如果是容器内地址，转换为外部访问地址
+	// 如果 endpoint 是容器名（如 minio:9000），转换为 localhost
+	if len(endpoint) > 6 && endpoint[:6] == "minio:" {
+		endpoint = "localhost:" + endpoint[6:]
+	}
 	return fmt.Sprintf("%s://%s/%s/%s", scheme, endpoint, bucket, objectName)
 }

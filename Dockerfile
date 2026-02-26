@@ -1,5 +1,5 @@
 # 多阶段构建：第一阶段 - 构建Go应用
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -51,6 +51,9 @@ COPY --from=builder /app/vida-worker .
 
 # 复制配置文件
 COPY --from=builder /app/configs ./configs
+
+# 复制Swagger文档
+COPY --from=builder /app/api/openapi ./api/openapi
 
 # 创建必要的目录
 RUN mkdir -p /app/logs && \
