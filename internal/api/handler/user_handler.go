@@ -1,12 +1,18 @@
 package handler
 
 import (
+	"context"
 	"errors"
+	"fmt"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"vida-go/internal/api/dto"
 	"vida-go/internal/api/middleware"
 	"vida-go/internal/api/response"
+	"vida-go/internal/config"
+	"vida-go/internal/infra/minio"
 	"vida-go/internal/service"
 	"vida-go/pkg/logger"
 
@@ -24,6 +30,106 @@ func NewUserHandler(userService *service.UserService, authService *service.AuthS
 		userService: userService,
 		authService: authService,
 	}
+}
+
+// GetProfile 获取用户公开主页信息（无需登录，供查看他人主页）
+// @Summary 获取用户公开主页
+// @Description 获取用户公开信息，用于展示他人主页
+// @Tags 用户
+// @Produce json
+// @Param id path int true "用户ID"
+// @Success 200 {object} response.Response{data=dto.UserFullInfo} "获取成功"
+// @Failure 404 {object} response.ErrorResponse "用户不存在"
+// @Router /users/{id}/profile [get]
+func (h *UserHandler) GetProfile(c *gin.Context) {
+	targetID, err := parseIDParam(c)
+	if err != nil {
+		response.BadRequest(c, "无效的用户ID")
+		return
+	}
+
+	info, err := h.userService.GetUserByID(targetID)
+	if err != nil {
+		handleUserError(c, err)
+		return
+	}
+
+	response.OK(c, "获取成功", info)
+}
+
+// UploadAvatar 上传用户头像
+// @Summary 上传用户头像
+// @Description 上传头像图片，支持 jpg/png/gif/webp
+// @Tags 用户
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param avatar formData file true "头像文件"
+// @Success 200 {object} response.Response{data=dto.UserFullInfo} "上传成功"
+// @Failure 400 {object} response.ErrorResponse "请求参数无效"
+// @Router /users/me/avatar [post]
+func (h *UserHandler) UploadAvatar(c *gin.Context) {
+	userID, ok := middleware.GetCurrentUserID(c)
+	if !ok {
+		response.Unauthorized(c, "请先登录")
+		return
+	}
+
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		response.BadRequest(c, "请选择头像文件")
+		return
+	}
+
+	ext := filepath.Ext(file.Filename)
+	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
+	if !allowed[ext] {
+		response.BadRequest(c, "仅支持 jpg、png、gif、webp 格式")
+		return
+	}
+	if file.Size > 2*1024*1024 {
+		response.BadRequest(c, "头像大小不能超过 2MB")
+		return
+	}
+
+	f, err := file.Open()
+	if err != nil {
+		response.InternalError(c, "打开文件失败")
+		return
+	}
+	defer f.Close()
+
+	objectName := fmt.Sprintf("avatar_%d_%d%s", userID, time.Now().Unix(), ext)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	contentType := "image/jpeg"
+	if ext == ".png" {
+		contentType = "image/png"
+	} else if ext == ".gif" {
+		contentType = "image/gif"
+	} else if ext == ".webp" {
+		contentType = "image/webp"
+	}
+
+	if _, err := minio.UploadFile(ctx, "user-avatars", objectName, f, file.Size, contentType); err != nil {
+		logger.Error("Upload avatar failed", zap.Error(err))
+		response.InternalError(c, "上传头像失败")
+		return
+	}
+
+	minioCfg := config.GetMinIO()
+	avatarURL := minio.GetPublicURL(minioCfg.Endpoint, minioCfg.UseSSL, "user-avatars", objectName)
+
+	currentUser, _ := h.authService.GetCurrentUser(userID)
+	req := dto.UserUpdateRequest{Avatar: &avatarURL}
+	info, err := h.userService.UpdateUser(userID, currentUser, &req)
+	if err != nil {
+		handleUserError(c, err)
+		return
+	}
+
+	response.OK(c, "头像上传成功", info)
 }
 
 // GetMe 获取当前用户信息

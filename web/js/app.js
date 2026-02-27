@@ -54,7 +54,7 @@ const App = (() => {
         }
 
         if (page === 'home') Player.resumeCurrent();
-        if (page === 'profile') UI.updateProfile(currentUser);
+        if (page === 'profile') refreshProfile();
 
         currentPage = page;
     }
@@ -136,6 +136,21 @@ const App = (() => {
         document.getElementById('registerClose').addEventListener('click', hideRegister);
         document.querySelector('#registerModal .modal-overlay').addEventListener('click', hideRegister);
         document.getElementById('toLogin').addEventListener('click', (e) => { e.preventDefault(); hideRegister(); showLogin(); });
+    }
+
+    async function refreshProfile() {
+        if (!API.getToken()) {
+            UI.updateProfile(null);
+            return;
+        }
+        try {
+            const res = await API.Auth.me();
+            currentUser = res.data;
+            UI.updateProfile(currentUser);
+        } catch {
+            currentUser = null;
+            UI.updateProfile(null);
+        }
     }
 
     function logout() {

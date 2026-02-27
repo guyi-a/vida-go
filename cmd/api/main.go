@@ -133,7 +133,7 @@ func main() {
 	relationService := service.NewRelationService(relationRepo, userRepo)
 	videoService := service.NewVideoService(videoRepo)
 	commentService := service.NewCommentService(commentRepo, videoRepo)
-	favoriteService := service.NewFavoriteService(favoriteRepo, videoRepo)
+	favoriteService := service.NewFavoriteService(favoriteRepo, videoRepo, userRepo)
 	searchService := service.NewSearchService(videoRepo)
 
 	// 启动转码结果消费者（后台 goroutine）

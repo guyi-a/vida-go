@@ -128,3 +128,15 @@ func (r *UserRepository) DecrementFollowerCount(id int64) error {
 	return r.db.Model(&model.User{}).Where("id = ? AND follower_count > 0", id).
 		UpdateColumn("follower_count", gorm.Expr("follower_count - 1")).Error
 }
+
+// IncrementTotalFavorited 获赞数 +1（视频作者被点赞总数）
+func (r *UserRepository) IncrementTotalFavorited(id int64) error {
+	return r.db.Model(&model.User{}).Where("id = ?", id).
+		UpdateColumn("total_favorited", gorm.Expr("total_favorited + 1")).Error
+}
+
+// DecrementTotalFavorited 获赞数 -1（不低于 0）
+func (r *UserRepository) DecrementTotalFavorited(id int64) error {
+	return r.db.Model(&model.User{}).Where("id = ? AND total_favorited > 0", id).
+		UpdateColumn("total_favorited", gorm.Expr("total_favorited - 1")).Error
+}

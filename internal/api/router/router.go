@@ -35,11 +35,14 @@ func Setup(
 	}
 
 	// --- 用户模块 ---
+	// 公开接口：查看用户主页（头像、昵称、关注/粉丝数）
+	v1.GET("/users/:id/profile", userHandler.GetProfile)
 	users := v1.Group("/users", middleware.AuthRequired())
 	{
 		users.GET("/me", userHandler.GetMe)
 		users.GET("/:id", userHandler.GetUser)
 		users.PUT("/:id", userHandler.UpdateUser)
+		users.POST("/me/avatar", userHandler.UploadAvatar)
 
 		// 管理员接口
 		admin := users.Group("", adminMiddleware)

@@ -83,7 +83,7 @@ const Player = (() => {
                 try {
                     const ids = list.map(v => v.id);
                     const statusRes = await API.Favorite.batchStatus(ids);
-                    const statuses = statusRes.data || {};
+                    const statuses = statusRes.data?.favorites_status || statusRes.data || {};
                     for (const [id, liked] of Object.entries(statuses)) {
                         if (liked) likedSet.add(Number(id));
                     }
@@ -122,7 +122,7 @@ const Player = (() => {
                     <img src="${video.author?.avatar || ''}" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-user\\'></i>'">
                 </div>
                 <button class="action-btn like-btn ${isLiked ? 'liked' : ''}" data-video-id="${video.id}">
-                    <i class="fas fa-heart"></i>
+                    <i class="${isLiked ? 'fas' : 'far'} fa-heart"></i>
                     <span>${formatCount(video.favorite_count || 0)}</span>
                 </button>
                 <button class="action-btn comment-btn" data-video-id="${video.id}">
@@ -222,11 +222,13 @@ const Player = (() => {
                 await API.Favorite.unlike(video.id);
                 likedSet.delete(video.id);
                 btn.classList.remove('liked');
+                btn.querySelector('i').className = 'far fa-heart';
                 video.favorite_count = Math.max(0, (video.favorite_count || 1) - 1);
             } else {
                 await API.Favorite.like(video.id);
                 likedSet.add(video.id);
                 btn.classList.add('liked');
+                btn.querySelector('i').className = 'fas fa-heart';
                 video.favorite_count = (video.favorite_count || 0) + 1;
             }
             countEl.textContent = formatCount(video.favorite_count);

@@ -32,4 +32,5 @@ type UserInfo struct {
 	UserRole        string  `json:"user_role"`
 	FollowCount     int64   `json:"follow_count"`
 	FollowerCount   int64   `json:"follower_count"`
+	TotalFavorited  int64   `json:"total_favorited"`
 }

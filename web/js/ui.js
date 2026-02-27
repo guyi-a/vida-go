@@ -161,24 +161,107 @@ const UI = (() => {
         document.getElementById('chatInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
         });
+        document.getElementById('agentHistoryBtn').addEventListener('click', toggleChatHistory);
+        document.getElementById('closeHistoryDrawer').addEventListener('click', closeChatHistory);
+        document.getElementById('chatHistoryOverlay').addEventListener('click', closeChatHistory);
         document.getElementById('newChatBtn').addEventListener('click', () => {
             chatId = 'chat-' + Date.now();
-            const msgs = document.getElementById('chatMessages');
-            msgs.innerHTML = `
-                <div class="chat-welcome">
-                    <div class="welcome-icon"><i class="fas fa-robot"></i></div>
-                    <h3>你好，我是 AI 助手</h3>
-                    <p>我可以帮你搜索和推荐视频，试试问我：</p>
-                    <div class="welcome-suggestions">
-                        <button class="suggestion-btn">帮我找搞笑视频</button>
-                        <button class="suggestion-btn">推荐热门视频</button>
-                        <button class="suggestion-btn">搜索教程类视频</button>
-                    </div>
-                </div>
-            `;
-            bindSuggestions();
+            showWelcome();
+            loadChatHistory();
         });
         bindSuggestions();
+    }
+
+    function showWelcome() {
+        const msgs = document.getElementById('chatMessages');
+        msgs.innerHTML = `
+            <div class="chat-welcome">
+                <div class="welcome-icon"><i class="fas fa-robot"></i></div>
+                <h3>你好，我是 AI 助手</h3>
+                <p>我可以帮你搜索和推荐视频，试试问我：</p>
+                <div class="welcome-suggestions">
+                    <button class="suggestion-btn">帮我找搞笑视频</button>
+                    <button class="suggestion-btn">推荐热门视频</button>
+                    <button class="suggestion-btn">搜索教程类视频</button>
+                </div>
+            </div>
+        `;
+        bindSuggestions();
+    }
+
+    function toggleChatHistory() {
+        const drawer = document.getElementById('chatHistoryDrawer');
+        const overlay = document.getElementById('chatHistoryOverlay');
+        const isOpen = drawer.classList.contains('show');
+        if (isOpen) {
+            closeChatHistory();
+        } else {
+            drawer.classList.add('show');
+            overlay.classList.add('show');
+            loadChatHistory();
+        }
+    }
+
+    function closeChatHistory() {
+        document.getElementById('chatHistoryDrawer').classList.remove('show');
+        document.getElementById('chatHistoryOverlay').classList.remove('show');
+    }
+
+    async function loadChatHistory() {
+        const list = document.getElementById('chatHistoryList');
+        list.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+        if (!API.getToken()) {
+            list.innerHTML = '<div class="empty-state"><p>登录后查看对话历史</p></div>';
+            return;
+        }
+        try {
+            const res = await API.Agent.chats();
+            const chats = res.data || [];
+            list.innerHTML = '';
+            if (chats.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>暂无对话历史</p></div>';
+                return;
+            }
+            chats.forEach(c => {
+                const item = document.createElement('div');
+                item.className = 'chat-history-item' + (c.chat_id === chatId ? ' active' : '');
+                item.dataset.chatId = c.chat_id;
+                item.innerHTML = `
+                    <div class="chat-history-preview">${escapeHtml((c.preview || '新对话').slice(0, 30))}${(c.preview || '').length > 30 ? '...' : ''}</div>
+                    <div class="chat-history-meta">${c.message_count || 0} 条消息</div>
+                `;
+                item.addEventListener('click', () => loadChatById(c.chat_id));
+                list.appendChild(item);
+            });
+        } catch (e) {
+            list.innerHTML = `<div class="empty-state"><p>${e.message}</p></div>`;
+        }
+    }
+
+    async function loadChatById(id) {
+        chatId = id;
+        closeChatHistory();
+        const msgs = document.getElementById('chatMessages');
+        msgs.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+        if (!API.getToken()) {
+            showWelcome();
+            return;
+        }
+        try {
+            const res = await API.Agent.chatMessages(id);
+            const messages = res.data?.messages || [];
+            msgs.innerHTML = '';
+            if (messages.length === 0) {
+                showWelcome();
+                return;
+            }
+            messages.forEach(m => {
+                addChatBubble(m.content || '', m.role === 'user' ? 'user' : 'bot');
+            });
+            msgs.scrollTop = msgs.scrollHeight;
+        } catch (e) {
+            msgs.innerHTML = `<div class="empty-state"><p>${e.message}</p></div>`;
+        }
     }
 
     function bindSuggestions() {
@@ -257,6 +340,29 @@ const UI = (() => {
         document.getElementById('profileLoginBtn').addEventListener('click', () => App.showLogin());
         document.getElementById('logoutBtn').addEventListener('click', () => App.logout());
 
+        const avatarWrap = document.getElementById('profileAvatarWrap');
+        const avatarInput = document.getElementById('avatarFileInput');
+        avatarWrap.addEventListener('click', () => {
+            if (!API.getToken()) return;
+            avatarInput.click();
+        });
+        avatarInput.addEventListener('change', async () => {
+            const file = avatarInput.files[0];
+            if (!file) return;
+            try {
+                const res = await API.User.uploadAvatar(file);
+                avatarInput.value = '';
+                if (res.data?.avatar) {
+                    document.getElementById('profileAvatar').src = res.data.avatar;
+                    document.getElementById('profileAvatar').style.display = '';
+                    document.getElementById('avatarPlaceholder').style.display = 'none';
+                }
+                Toast.show('头像上传成功', 'success');
+            } catch (e) {
+                Toast.show(e.message || '上传失败', 'error');
+            }
+        });
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -327,7 +433,7 @@ const UI = (() => {
         page.classList.add('active');
 
         try {
-            const res = await API.User.get(userId);
+            const res = await API.User.getProfile(userId);
             const user = res.data;
             document.getElementById('userProfileName').textContent = '@' + (user.user_name || '');
             document.getElementById('userProfileAvatar').src = user.avatar || '';

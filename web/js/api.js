@@ -20,9 +20,9 @@ const API = (() => {
             opts.headers = { ...defaults.headers, ...opts.headers };
         }
         const res = await fetch(url, { ...defaults, ...opts });
+        const text = await res.text();
         let data;
-        try { data = await res.json(); } catch {
-            const text = await res.text();
+        try { data = JSON.parse(text); } catch {
             throw new Error(text || `请求失败: ${res.status}`);
         }
         if (!res.ok) {
@@ -176,13 +176,29 @@ const API = (() => {
         },
 
         chats: () => request(`${BASE}/agent/chats`),
+        chatMessages: (chatId) =>
+            request(`${BASE}/agent/chats/${chatId}`),
         deleteChat: (chatId) =>
             request(`${BASE}/agent/chats/${chatId}`, { method: 'DELETE' }),
     };
 
     const User = {
         get: (id) => request(`${BASE}/users/${id}`),
+        getProfile: (id) => request(`${BASE}/users/${id}/profile`),
         getMe: () => request(`${BASE}/users/me`),
+        uploadAvatar: (file) => {
+            const fd = new FormData();
+            fd.append('avatar', file);
+            return fetch(`${BASE}/users/me/avatar`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: fd,
+            }).then(async (res) => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error?.message || data.message || '上传失败');
+                return data;
+            });
+        },
     };
 
     return {

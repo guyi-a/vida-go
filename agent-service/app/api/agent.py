@@ -240,6 +240,31 @@ async def get_chat_list(
         raise HTTPException(status_code=500, detail=f"获取对话列表失败: {str(e)}")
 
 
+@router.get("/chats/{chat_id}")
+async def get_chat_messages(
+    chat_id: str,
+    authorization: Optional[str] = Header(None)
+):
+    """获取指定对话的完整消息历史"""
+    try:
+        user_id = get_user_id_str(authorization)
+        memory_store = get_memory_store()
+        
+        messages = await memory_store.get_records(user_id, chat_id)
+        
+        return {
+            "code": 200,
+            "message": "success",
+            "data": {
+                "chat_id": chat_id,
+                "messages": messages
+            }
+        }
+    except Exception as e:
+        logger.error(f"获取对话消息失败: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"获取对话消息失败: {str(e)}")
+
+
 @router.delete("/chats/{chat_id}")
 async def delete_chat(
     chat_id: str,

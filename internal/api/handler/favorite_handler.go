@@ -204,36 +204,28 @@ func (h *FavoriteHandler) BatchStatus(c *gin.Context) {
 	})
 }
 
-// GetMyFavoritedVideos 获取我点赞的视频ID列表
-// @Summary 获取我点赞的视频ID列表
-// @Description 获取当前用户点赞过的视频ID列表
+// GetMyFavoritedVideos 获取我点赞的视频列表
+// @Summary 获取我点赞的视频列表
+// @Description 获取当前用户点赞过的视频详情列表
 // @Tags 点赞
 // @Produce json
 // @Security BearerAuth
 // @Param page query int false "页码" default(1)
 // @Param page_size query int false "每页数量" default(20)
-// @Success 200 {object} response.Response "获取成功"
+// @Success 200 {object} response.Response{data=dto.VideoListData} "获取成功"
 // @Router /favorites/my/videos [get]
 func (h *FavoriteHandler) GetMyFavoritedVideos(c *gin.Context) {
 	userID, _ := middleware.GetCurrentUserID(c)
 	page, pageSize := parsePagination(c)
 
-	videoIDs, total, err := h.favoriteService.GetFavoritedVideoIDs(userID, page, pageSize)
+	data, err := h.favoriteService.GetFavoritedVideos(userID, page, pageSize)
 	if err != nil {
 		logger.Error("Get my favorited videos failed", zap.Error(err))
-		response.InternalError(c, "获取我点赞的视频ID列表失败")
+		response.InternalError(c, "获取点赞视频列表失败")
 		return
 	}
 
-	totalPages := (total + int64(pageSize) - 1) / int64(pageSize)
-
-	response.OK(c, "获取我点赞的视频ID列表成功", gin.H{
-		"video_ids":   videoIDs,
-		"total":       total,
-		"page":        page,
-		"page_size":   pageSize,
-		"total_pages": totalPages,
-	})
+	response.OK(c, "获取点赞视频列表成功", data)
 }
 
 func handleFavoriteError(c *gin.Context, err error) {

@@ -121,5 +121,6 @@ func toUserInfo(user *model.User) *dto.UserInfo {
 		UserRole:        user.UserRole,
 		FollowCount:     user.FollowCount,
 		FollowerCount:   user.FollowerCount,
+		TotalFavorited:  user.TotalFavorited,
 	}
 }

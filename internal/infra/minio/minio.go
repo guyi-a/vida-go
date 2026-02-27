@@ -44,12 +44,15 @@ func Init(cfg *config.MinIOConfig) error {
 		}
 	}
 
-	// public-videos 需要公开读，供前端直接播放视频
-	policy := `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::public-videos/*"]}]}`
-	if err := client.SetBucketPolicy(ctx, "public-videos", policy); err != nil {
-		return fmt.Errorf("failed to set public policy for public-videos: %w", err)
+	// public-videos 和 user-avatars 需要公开读
+	for _, bucket := range []string{"public-videos", "user-avatars"} {
+		policy := fmt.Sprintf(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":["*"]},"Action":["s3:GetObject"],"Resource":["arn:aws:s3:::%s/*"]}]}`, bucket)
+		if err := client.SetBucketPolicy(ctx, bucket, policy); err != nil {
+			logger.Warn("Set bucket policy failed", zap.String("bucket", bucket), zap.Error(err))
+		} else {
+			logger.Info("MinIO bucket set to public-read", zap.String("bucket", bucket))
+		}
 	}
-	logger.Info("MinIO public-videos bucket set to public-read")
 
 	logger.Info("MinIO connected",
 		zap.String("endpoint", cfg.Endpoint),

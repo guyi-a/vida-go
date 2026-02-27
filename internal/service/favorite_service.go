@@ -18,15 +18,17 @@ var (
 type FavoriteService struct {
 	favoriteRepo *repository.FavoriteRepository
 	videoRepo    *repository.VideoRepository
+	userRepo     *repository.UserRepository
 }
 
-func NewFavoriteService(favoriteRepo *repository.FavoriteRepository, videoRepo *repository.VideoRepository) *FavoriteService {
-	return &FavoriteService{favoriteRepo: favoriteRepo, videoRepo: videoRepo}
+func NewFavoriteService(favoriteRepo *repository.FavoriteRepository, videoRepo *repository.VideoRepository, userRepo *repository.UserRepository) *FavoriteService {
+	return &FavoriteService{favoriteRepo: favoriteRepo, videoRepo: videoRepo, userRepo: userRepo}
 }
 
 // Favorite 点赞视频
 func (s *FavoriteService) Favorite(userID, videoID int64) (*dto.FavoriteInfo, int64, error) {
-	if _, err := s.videoRepo.GetByID(videoID); err != nil {
+	video, err := s.videoRepo.GetByID(videoID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, 0, ErrVideoNotFound
 		}
@@ -47,6 +49,7 @@ func (s *FavoriteService) Favorite(userID, videoID int64) (*dto.FavoriteInfo, in
 	}
 
 	_ = s.videoRepo.IncrementFavoriteCount(videoID)
+	_ = s.userRepo.IncrementTotalFavorited(video.AuthorID)
 
 	totalFav, _ := s.favoriteRepo.CountByVideo(videoID)
 
@@ -55,6 +58,7 @@ func (s *FavoriteService) Favorite(userID, videoID int64) (*dto.FavoriteInfo, in
 
 // Unfavorite 取消点赞
 func (s *FavoriteService) Unfavorite(userID, videoID int64) (int64, error) {
+	video, _ := s.videoRepo.GetByID(videoID)
 	deleted, err := s.favoriteRepo.Delete(userID, videoID)
 	if err != nil {
 		return 0, err
@@ -64,6 +68,9 @@ func (s *FavoriteService) Unfavorite(userID, videoID int64) (int64, error) {
 	}
 
 	_ = s.videoRepo.DecrementFavoriteCount(videoID)
+	if video != nil {
+		_ = s.userRepo.DecrementTotalFavorited(video.AuthorID)
+	}
 
 	totalFav, _ := s.favoriteRepo.CountByVideo(videoID)
 	return totalFav, nil
@@ -123,6 +130,41 @@ func (s *FavoriteService) BatchCheckStatus(userID int64, videoIDs []int64) (map[
 func (s *FavoriteService) GetFavoritedVideoIDs(userID int64, page, pageSize int) ([]int64, int64, error) {
 	skip := (page - 1) * pageSize
 	return s.favoriteRepo.GetFavoritedVideoIDs(userID, skip, pageSize)
+}
+
+// GetFavoritedVideos 获取用户点赞的视频详情列表
+func (s *FavoriteService) GetFavoritedVideos(userID int64, page, pageSize int) (*dto.VideoListData, error) {
+	skip := (page - 1) * pageSize
+	videoIDs, total, err := s.favoriteRepo.GetFavoritedVideoIDs(userID, skip, pageSize)
+	if err != nil {
+		return nil, err
+	}
+	if len(videoIDs) == 0 {
+		return &dto.VideoListData{Videos: []dto.VideoInfo{}, Total: total, Page: page, PageSize: pageSize}, nil
+	}
+	videos, err := s.videoRepo.GetByIDsWithAuthor(videoIDs)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]dto.VideoInfo, 0, len(videos))
+	for i := range videos {
+		info := dto.VideoInfo{
+			ID: videos[i].ID, AuthorID: videos[i].AuthorID,
+			Title: videos[i].Title, Description: videos[i].Description,
+			PlayURL: videos[i].PlayURL, CoverURL: videos[i].CoverURL,
+			Status: videos[i].Status, ViewCount: videos[i].ViewCount,
+			FavoriteCount: videos[i].FavoriteCount, CommentCount: videos[i].CommentCount,
+			CreatedAt: videos[i].CreatedAt,
+		}
+		if videos[i].Author.ID != 0 {
+			info.Author = &dto.AuthorBrief{
+				ID: videos[i].Author.ID, Username: videos[i].Author.UserName, Avatar: videos[i].Author.Avatar,
+			}
+		}
+		items = append(items, info)
+	}
+	totalPages := (total + int64(pageSize) - 1) / int64(pageSize)
+	return &dto.VideoListData{Videos: items, Total: total, Page: page, PageSize: pageSize, TotalPages: totalPages}, nil
 }
 
 func toFavoriteInfo(f *model.Favorite) *dto.FavoriteInfo {
